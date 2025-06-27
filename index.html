@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Document Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .year-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 8px;
+        }
+
+        .year-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+
+        .year-tab.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .year-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .year-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .semester-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .semester-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .semester-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #4f46e5;
+        }
+
+        .semester-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .document-types {
+            display: grid;
+            gap: 15px;
+        }
+
+        .document-type {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .document-type:hover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+
+        .document-type h4 {
+            color: #475569;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-button {
+            display: block;
+            width: 100%;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .file-input-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .uploaded-files {
+            margin-top: 10px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: #e0f2fe;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .file-name {
+            flex: 1;
+            color: #0f172a;
+            font-weight: 500;
+        }
+
+        .file-size {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .remove-file {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+
+        .progress-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-results {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4f46e5;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .export-button {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .export-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .semester-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .year-tabs {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Study Document Manager</h1>
+            <p>Organize your academic journey with ease</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Year Navigation -->
+            <div class="year-tabs">
+                <button class="year-tab active" onclick="showYear(1)">Year 1</button>
+                <button class="year-tab" onclick="showYear(2)">Year 2</button>
+                <button class="year-tab" onclick="showYear(3)">Year 3</button>
+            </div>
+
+            <!-- Year 1 Content -->
+            <div id="year1" class="year-content active">
+                <div class="semester-grid">
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 1</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s1-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s1-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s1-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s1-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s1-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s1-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s1-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s1-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s1-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s1-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s1-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s1-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s1-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s1-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s1-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 2</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s2-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s2-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s2-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s2-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s2-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s2-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s2-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s2-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s2-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s2-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s2-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s2-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y1s2-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y1s2-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y1s2-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Year 2 Content -->
+            <div id="year2" class="year-content">
+                <div class="semester-grid">
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 1</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s1-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s1-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s1-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s1-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s1-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s1-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s1-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s1-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s1-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s1-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s1-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s1-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s1-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s1-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s1-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 2</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s2-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s2-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s2-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s2-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s2-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s2-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s2-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s2-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s2-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s2-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s2-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s2-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y2s2-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y2s2-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y2s2-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Year 3 Content -->
+            <div id="year3" class="year-content">
+                <div class="semester-grid">
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 1</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s1-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s1-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s1-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s1-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s1-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s1-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s1-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s1-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s1-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s1-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s1-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s1-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s1-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s1-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s1-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="semester-card">
+                        <div class="semester-title">Semester 2</div>
+                        <div class="document-types">
+                            <div class="document-type">
+                                <h4>📝 Quizzes</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s2-quizzes" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s2-quizzes').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s2-quizzes-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📊 Presentations</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s2-presentations" class="file-input" multiple accept=".pdf,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s2-presentations').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s2-presentations-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📖 Lectures</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s2-lectures" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s2-lectures').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s2-lectures-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>📋 Assignments</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s2-assignments" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s2-assignments').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s2-assignments-files"></div>
+                            </div>
+                            <div class="document-type">
+                                <h4>🎯 Final Exam</h4>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="y3s2-final" class="file-input" multiple accept=".pdf,.doc,.docx">
+                                    <button class="file-input-button" onclick="document.getElementById('y3s2-final').click()">Choose Files</button>
+                                </div>
+                                <div class="uploaded-files" id="y3s2-final-files"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section">
+                <div class="progress-title">📊 Upload Progress</div>
+                <div class="progress-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalFiles">0</div>
+                        <div class="stat-label">Total Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalComplete">0</div>
+                        <div class="stat-label">Categories Complete</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="progressPercent">0%</div>
+                        <div class="stat-label">Overall Progress</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <h3 class="progress-title">🔍 Search Documents</h3>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for documents..." oninput="searchDocuments()">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="export-section">
+                <button class="export-button" onclick="exportDocumentList()">📥 Export Document List</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store all uploaded files
+        let documentStorage = {};
+        
+        // Initialize storage structure
+        function initializeStorage() {
+            for (let year = 1; year <= 3; year++) {
+                for (let semester = 1; semester <= 2; semester++) {
+                    const types = ['quizzes', 'presentations', 'lectures', 'assignments', 'final'];
+                    types.forEach(type => {
+                        const key = `y${year}s${semester}-${type}`;
+                        documentStorage[key] = [];
+                    });
+                }
+            }
+        }
+
+        // Initialize on load
+        initializeStorage();
+
+        // Show specific year content
+        function showYear(year) {
+            // Hide all year contents
+            document.querySelectorAll('.year-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected year content
+            document.getElementById(`year${year}`).classList.add('active');
+            
+            // Add active class to selected tab
+            event.target.classList.add('active');
+        }
+
+        // Handle file uploads
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInputs = document.querySelectorAll('.file-input');
+            
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function(e) {
+                    handleFileUpload(e.target.id, e.target.files);
+                });
+            });
+        });
+
+        function handleFileUpload(inputId, files) {
+            const filesContainer = document.getElementById(inputId + '-files');
+            
+            // Add files to storage
+            if (!documentStorage[inputId]) {
+                documentStorage[inputId] = [];
+            }
+            
+            Array.from(files).forEach(file => {
+                const fileInfo = {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    uploadDate: new Date().toISOString()
+                };
+                
+                documentStorage[inputId].push(fileInfo);
+                
+                // Create file display element
+                const fileElement = createFileElement(fileInfo, inputId);
+                filesContainer.appendChild(fileElement);
+            });
+            
+            updateProgress();
+        }
+
+        function createFileElement(fileInfo, inputId) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const fileName = document.createElement('span');
+            fileName.className = 'file-name';
+            fileName.textContent = fileInfo.name;
+            
+            const fileSize = document.createElement('span');
+            fileSize.className = 'file-size';
+            fileSize.textContent = formatFileSize(fileInfo.size);
+            
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-file';
+            removeButton.textContent = '×';
+            removeButton.onclick = () => removeFile(inputId, fileInfo.name, fileItem);
+            
+            fileItem.appendChild(fileName);
+            fileItem.appendChild(fileSize);
+            fileItem.appendChild(removeButton);
+            
+            return fileItem;
+        }
+
+        function removeFile(inputId, fileName, element) {
+            // Remove from storage
+            documentStorage[inputId] = documentStorage[inputId].filter(file => file.name !== fileName);
+            
+            // Remove from display
+            element.remove();
+            
+            updateProgress();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateProgress() {
+            let totalFiles = 0;
+            let completedCategories = 0;
+            const totalCategories = 30; // 3 years × 2 semesters × 5 categories
+            
+            Object.keys(documentStorage).forEach(key => {
+                const fileCount = documentStorage[key].length;
+                totalFiles += fileCount;
+                if (fileCount > 0) {
+                    completedCategories++;
+                }
+            });
+            
+            const progressPercent = Math.round((completedCategories / totalCategories) * 100);
+            
+            document.getElementById('totalFiles').textContent = totalFiles;
+            document.getElementById('totalComplete').textContent = completedCategories;
+            document.getElementById('progressPercent').textContent = progressPercent + '%';
+        }
+
+        function searchDocuments() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (searchTerm.length < 2) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            
+            const results = [];
+            
+            Object.keys(documentStorage).forEach(key => {
+                documentStorage[key].forEach(file => {
+                    if (file.name.toLowerCase().includes(searchTerm)) {
+                        results.push({
+                            file: file,
+                            category: formatCategoryName(key),
+                            location: key
+                        });
+                    }
+                });
+            });
+            
+            displaySearchResults(results);
+        }
+
+        function formatCategoryName(key) {
+            const parts = key.split('-');
+            const yearSem = parts[0];
+            const type = parts[1];
+            
+            const year = yearSem.charAt(1);
+            const semester = yearSem.charAt(3);
+            
+            const typeNames = {
+                'quizzes': 'Quizzes',
+                'presentations': 'Presentations',
+                'lectures': 'Lectures',
+                'assignments': 'Assignments',
+                'final': 'Final Exam'
+            };
+            
+            return `Year ${year}, Semester ${semester} - ${typeNames[type]}`;
+        }
+
+        function displaySearchResults(results) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No documents found</p>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = results.map(result => `
+                <div class="search-result-item">
+                    <strong>${result.file.name}</strong><br>
+                    <small style="color: #64748b;">${result.category}</small><br>
+                    <small style="color: #059669;">Uploaded: ${new Date(result.file.uploadDate).toLocaleDateString()}</small>
+                </div>
+            `).join('');
+        }
+
+        function exportDocumentList() {
+            let csvContent = "Year,Semester,Category,File Name,File Size,Upload Date\n";
+            
+            Object.keys(documentStorage).forEach(key => {
+                documentStorage[key].forEach(file => {
+                    const parts = key.split('-');
+                    const yearSem = parts[0];
+                    const type = parts[1];
+                    
+                    const year = yearSem.charAt(1);
+                    const semester = yearSem.charAt(3);
+                    
+                    const typeNames = {
+                        'quizzes': 'Quizzes',
+                        'presentations': 'Presentations',
+                        'lectures': 'Lectures',
+                        'assignments': 'Assignments',
+                        'final': 'Final Exam'
+                    };
+                    
+                    csvContent += `${year},${semester},${typeNames[type]},"${file.name}",${formatFileSize(file.size)},${new Date(file.uploadDate).toLocaleDateString()}\n`;
+                });
+            });
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'study-documents-list.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Auto-save functionality (saves to localStorage in real implementation)
+        function autoSave() {
+            // In a real implementation, this would save to a backend
+            console.log('Auto-saving document structure...', documentStorage);
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(autoSave, 30000);
+    </script>
+</body>
+</html>
