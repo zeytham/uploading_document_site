@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: teacher_documents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - teacher_docs_network
+
+  # Redis for session storage (optional)
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password_change_me}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - teacher_docs_network
+
+  # Main Application
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      
+      # Database Configuration
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: teacher_documents
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_here_make_it_very_long_and_random}
+      JWT_EXPIRES_IN: 7d
+      
+      # File Upload Configuration
+      MAX_FILE_SIZE: 52428800
+      UPLOAD_PATH: ./uploads
+      ALLOWED_FILE_TYPES: pdf,doc,docx,txt,ppt,pptx,xls,xlsx,jpg,jpeg,png,gif
+      
+      # Security Configuration
+      BCRYPT_ROUNDS: 12
+      RATE_LIMIT_WINDOW: 15
+      RATE_LIMIT_MAX_REQUESTS: 100
+      
+      # Admin Configuration
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teachersystem.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!@#}
+      
+      # Redis Configuration (optional)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password_change_me}
+      
+    volumes:
+      - app_uploads:/app/uploads
+      - app_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - teacher_docs_network
+
+  # Nginx Reverse Proxy (optional, for production)
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - app_uploads:/var/www/uploads:ro
+    depends_on:
+      - app
+    networks:
+      - teacher_docs_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_uploads:
+    driver: local
+  app_logs:
+    driver: local
+
+networks:
+  teacher_docs_network:
+    driver: bridge

@@ -4,6 +4,15 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { query, withTransaction } = require('../config/database');
 const { authenticateToken, logActivity } = require('../middleware/auth');
+const { 
+    loginLimiter, 
+    checkAccountLockout, 
+    validatePasswordStrength, 
+    sanitizeInput,
+    handleFailedLogin,
+    resetFailedAttempts,
+    logSecurityEvent
+} = require('../middleware/security');
 
 const router = express.Router();
 
@@ -22,7 +31,7 @@ const loginValidation = [
 ];
 
 // Register new user
-router.post('/register', registerValidation, async (req, res) => {
+router.post('/register', sanitizeInput, registerValidation, validatePasswordStrength, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -99,7 +108,7 @@ router.post('/register', registerValidation, async (req, res) => {
 });
 
 // Login user
-router.post('/login', loginValidation, async (req, res) => {
+router.post('/login', sanitizeInput, loginLimiter, checkAccountLockout, loginValidation, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -136,11 +145,16 @@ router.post('/login', loginValidation, async (req, res) => {
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
+            await handleFailedLogin(email, req);
             return res.status(401).json({
                 error: 'Invalid credentials',
                 message: 'Email or password is incorrect'
             });
         }
+
+        // Reset failed login attempts on successful login
+        await resetFailedAttempts(user.id);
+        req.loginSuccess = true;
 
         // Update last login
         await query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
@@ -312,10 +326,12 @@ router.put('/profile',
 // Change password
 router.put('/change-password',
     authenticateToken,
+    sanitizeInput,
     [
         body('currentPassword').notEmpty().withMessage('Current password is required'),
         body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters long')
     ],
+    validatePasswordStrength,
     logActivity('PASSWORD_CHANGE', 'user'),
     async (req, res) => {
         try {

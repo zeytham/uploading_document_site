@@ -11,6 +11,12 @@ const authRoutes = require('./routes/auth');
 const fileRoutes = require('./routes/files');
 const userRoutes = require('./routes/users');
 const { initializeDatabase } = require('./config/database');
+const { 
+    apiLimiter, 
+    sanitizeInput, 
+    ipFilter, 
+    securityHeaders 
+} = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +46,11 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// Security middleware
+app.use(securityHeaders);
+app.use(ipFilter);
+app.use(sanitizeInput);
+
 // General middleware
 app.use(compression());
 app.use(morgan('combined'));
@@ -57,7 +68,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/files', fileRoutes);
+app.use('/api/files', apiLimiter, fileRoutes);
 app.use('/api/users', userRoutes);
 
 // Health check endpoint
