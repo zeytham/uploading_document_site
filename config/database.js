@@ -2,6 +2,9 @@ const { Pool } = require('pg');
 
 // Database connection pool
 const pool = new Pool({
+    // For Vercel deployment, use connection string
+    connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+    // Fallback to individual parameters for local development
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME || 'teacher_documents',
@@ -10,6 +13,8 @@ const pool = new Pool({
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    // SSL configuration for production
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Test database connection

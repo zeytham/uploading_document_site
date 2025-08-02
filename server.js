@@ -112,8 +112,17 @@ app.use((err, req, res, next) => {
 // Initialize database and start server
 async function startServer() {
     try {
-        await initializeDatabase();
-        console.log('✅ Database initialized successfully');
+        // Only initialize database in development or if explicitly requested
+        if (process.env.NODE_ENV !== 'production' || process.env.INIT_DB === 'true') {
+            await initializeDatabase();
+            console.log('✅ Database initialized successfully');
+        }
+        
+        // For Vercel, we export the app instead of starting a server
+        if (process.env.VERCEL) {
+            console.log('🚀 Running on Vercel');
+            return app;
+        }
         
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
@@ -122,7 +131,9 @@ async function startServer() {
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
-        process.exit(1);
+        if (!process.env.VERCEL) {
+            process.exit(1);
+        }
     }
 }
 
@@ -137,4 +148,9 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-startServer();
+// Export for Vercel or start server for local development
+if (process.env.VERCEL) {
+    module.exports = app;
+} else {
+    startServer();
+}
