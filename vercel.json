@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "teacher-document-system",
+  "name": "mr-hassani-teacher-system",
   "builds": [
     {
       "src": "server.js",
@@ -8,14 +8,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "/server.js"
-    },
     {
       "src": "/(.*)",
       "dest": "/server.js"
